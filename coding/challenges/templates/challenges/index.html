@@ -1,0 +1,47 @@
+<!-- challenges/templates/challenges/challenge_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ challenge.title }}{% endblock %}
+
+{% block content %}
+  <h2>{{ challenge.title }}</h2>
+  <p>{{ challenge.description }}</p>
+
+  <h3>Submit Code</h3>
+  <form id="codeForm" method="post" action="{% url 'submit_code' challenge.id %}">
+    {% csrf_token %}
+    <div id="code" style="height: 300px;"></div> <!-- Use a specific height for the editor -->
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <!-- Include Monaco Editor resources -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs/editor/editor.main.css">
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs/loader.js"></script>
+
+  <!-- Initialize Monaco Editor -->
+  <script>
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+      var editor = monaco.editor.create(document.getElementById('code'), {
+        value: '',
+        language: 'c',
+        theme: 'vs-dark',
+        automaticLayout: true,
+      });
+
+      // Add an event listener to the form for submitting the code
+      document.getElementById('codeForm').addEventListener('submit', function (event) {
+        // Get the code content from Monaco Editor
+        var userCode = editor.getValue();
+
+        // Add the code content to the form data
+        var hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'code';
+        hiddenInput.value = userCode;
+        this.appendChild(hiddenInput);
+      });
+    });
+  </script>
+{% endblock %}

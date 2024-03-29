@@ -1,0 +1,33 @@
+<!-- challenges/templates/challenges/challenge_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ challenge.title }}{% endblock %}
+
+{% block content %}
+  <h2>{{ challenge.title }}</h2>
+  <p>{{ challenge.description }}</p>
+
+  <h3>Submit Code</h3>
+  <form method="post" action="{% url 'submit_code' challenge.id %}">
+    {% csrf_token %}
+    <label for="code">Your C Code:</label><br>
+    <textarea id="code" name="code" rows="10" cols="50"></textarea><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <!-- Include CodeMirror resources -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.68.0/codemirror.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.68.0/codemirror.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.68.0/mode/clike/clike.js"></script>
+
+  <!-- Initialize CodeMirror -->
+  <script>
+    var codeEditor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      mode: "text/x-csrc",
+      theme: "dracula",
+      autoCloseTags: true  // Change to your preferred theme
+    });
+  </script>
+{% endblock %}

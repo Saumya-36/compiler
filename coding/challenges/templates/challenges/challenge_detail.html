@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ challenge.title }}{% endblock %}
+
+{% block content %}
+  <div style="display: flex; justify-content: space-between;">
+    <!-- Left half of the page -->
+    <div style="width: 48%;">
+      <h2>{{ challenge.title }}</h2>
+      <p>{{ challenge.description }}</p>
+
+      <h3>Test Cases</h3>
+      <ul>
+        {% for test_case in test_cases %}
+          <li>Test Case {{ test_case.id }} <br>Input: {{ test_case.input_data}}<br>Output:{% autoescape off %}{{ test_case.expected_output|linebreaks }}{% endautoescape %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Right half of the page -->
+    <div style="width: 48%;">
+      <h3>Editor Box</h3>
+      <div id="code" style="height: 300px;"></div>
+
+      <h3>Actual Output</h3>
+      <div id="actualOutput"></div>
+
+      <h3>Submit Code</h3>
+      <form id="codeForm" method="post" action="{% url 'submit_code' challenge.id %}">
+        {% csrf_token %}
+        <button type="button" id="submitBtn">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs/editor/editor.main.css">
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs/loader.js"></script>
+
+  <script>
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.29.1/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      var editor = monaco.editor.create(document.getElementById('code'), {
+        value: '',
+        language: 'c',
+        theme: 'vs-dark',
+        automaticLayout: true,
+      });
+
+      // Update the actual output box dynamically after code submission
+      document.getElementById('submitBtn').addEventListener('click', function () {
+        console.log('Submit button clicked!');
+
+        // Get the code content from Monaco Editor
+        var userCode = editor.getValue();
+
+        // Add the code content to the form data
+        var hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'code';
+        hiddenInput.value = userCode;
+        document.getElementById('codeForm').appendChild(hiddenInput);
+
+        // Update the actual output box
+        var actualOutputBox = document.getElementById('actualOutput');
+        actualOutputBox.innerHTML = 'Submitting code...';
+
+        // Make an asynchronous request to submit the code
+        fetch(document.getElementById('codeForm').action, {
+          method: document.getElementById('codeForm').method,
+          body: new URLSearchParams(new FormData(document.getElementById('codeForm'))),
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Clear previous content
+            actualOutputBox.innerHTML = '';
+
+            // Check if there is an error in the response
+            if (data.error) {
+              actualOutputBox.innerHTML = '<p>Error: ' + data.error + '</p>';
+            } else {
+              // Process the results and update the actual output box
+              data.results.forEach(result => {
+                actualOutputBox.innerHTML += '<p>Test Case ' + result.test_case + ':</p><pre>' + result.result[0] + '</pre>';
+              });
+            }
+          })
+          .catch(error => {
+            // Handle fetch errors
+            console.error('Fetch error:', error);
+            actualOutputBox.innerHTML = '<p>Error during code submission</p>';
+          });
+      });
+    });
+  </script>
+{% endblock %}
